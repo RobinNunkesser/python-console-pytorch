@@ -15,6 +15,8 @@ Diese Sammlung enthält Implementierungen von Deep Learning und Machine Learning
 - **mnist/**: Convolutional Neural Network für Bildklassifikation
 - **imdb/**: SimpleRNN für Sentimentanalyse von IMDB-Reviews
 - **nietzsche/**: LSTM für Textgenerierung basierend auf Nietzsche-Texten
+- **transfer_learning_cifar10/**: Transfer Learning mit ResNet18 auf CIFAR-10
+- **tabular_adult/**: Tabular Deep Learning mit kategorialen Embeddings (Adult-Dataset)
 
 ### Spezialisierte Trainingsverfahren
 - **custom_training/**: Manueller Training-Loop mit GradientTape (torch.autograd)
@@ -22,7 +24,7 @@ Diese Sammlung enthält Implementierungen von Deep Learning und Machine Learning
 ## Installation
 
 ```bash
-pip install torch torchvision torchaudio numpy matplotlib torchtext
+pip install torch torchvision torchaudio numpy matplotlib torchtext pandas scikit-learn
 ```
 
 ## Quick Start
@@ -78,6 +80,26 @@ cd custom_training && python main.py
 - Zeigt expliziten Training-Loop statt `model.fit()`
 - Perfekt um PyTorch's Autograd zu verstehen
 - `optimizer.zero_grad()` → `loss.backward()` → `optimizer.step()`
+
+### 6. Transfer Learning mit ResNet18 (CIFAR-10)
+
+```bash
+cd transfer_learning_cifar10 && python main.py --epochs-head 2 --epochs-finetune 2
+```
+
+- Phase 1: Nur Klassifikationskopf trainieren
+- Phase 2: Letzten Residual-Block + Kopf feinjustieren
+- Zeigt den typischen Enterprise-Workflow für Bildklassifikation mit kleinem Trainingsbudget
+
+### 7. Tabular Deep Learning (Adult)
+
+```bash
+cd tabular_adult && python main.py --epochs 10
+```
+
+- Numerische Features: skaliert
+- Kategoriale Features: Embeddings pro Spalte
+- Ideal als Vergleich zu klassischen Baselines (LogReg / XGBoost)
 
 ## PyTorch Grundkonzepte
 
