@@ -9,21 +9,21 @@ torch.manual_seed(1337)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Training data for AND
+# Training data for OR
 x_train = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32, device=device)
-y_train = torch.tensor([[0], [0], [0], [1]], dtype=torch.float32, device=device)
+y_train = torch.tensor([[0], [1], [1], [1]], dtype=torch.float32, device=device)
 
-# Model - linear for AND
-class ANDNet(nn.Module):
+# Model - linear for OR
+class ORNet(nn.Module):
     def __init__(self):
-        super(ANDNet, self).__init__()
+        super(ORNet, self).__init__()
         self.fc1 = nn.Linear(2, 1)
         
     def forward(self, x):
         x = torch.sigmoid(self.fc1(x))
         return x
 
-model = ANDNet().to(device)
+model = ORNet().to(device)
 optimizer = optim.Adam(model.parameters())
 criterion = nn.MSELoss()
 
@@ -36,15 +36,12 @@ for epoch in range(epochs):
     loss.backward()
     optimizer.step()
 
-# Print predictions and weights
+# Print predictions
 model.eval()
 with torch.no_grad():
     predictions = model(x_train)
-    print("Predictions for AND:")
+    print("Predictions for OR:")
     print(predictions)
-    weights = model.fc1.weight.data[0]
-    bias = model.fc1.bias.data[0]
-    print(f"Weights: {weights}, Bias: {bias}")
 
 # Visualization
 x = np.linspace(-0.01, 1.01, 103)
@@ -69,15 +66,5 @@ plt.ylim(0, 1)
 plt.xlabel("Eingabewert $x_1$")
 plt.ylabel("Eingabewert $x_2$")
 plt.colorbar()
-
-# Plot the decision boundary
-with torch.no_grad():
-    w1, w2 = weights[0].item(), weights[1].item()
-    b = bias.item()
-    # Decision boundary: sigmoid(w1*x1 + w2*x2 + b) = 0.5
-    # w1*x1 + w2*x2 + b = 0
-    x_boundary = (0.5 - b - w2 * x) / w1
-    plt.plot(x, x_boundary, color="black")
-
 plt.tight_layout()
-plt.savefig("predictions_linear_and_10000.svg")
+plt.savefig("predictions_or_10000.svg")

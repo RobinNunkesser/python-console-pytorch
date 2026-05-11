@@ -1,66 +1,75 @@
+import numpy as np
 import torch
-from torch import nn
-from torch import optim
-from torchviz import make_dot
-from torchview import draw_graph
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
 
-# Check if an accelerator is available and set the device accordingly
-device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
-print(f"Using {device} device")
+np.random.seed(1337)
+torch.manual_seed(1337)
 
-# Training data for AND
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Training data for XOR
 x_train = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32, device=device)
-y_train = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32, device=device).view(-1,1)
+y_train = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32, device=device)
 
-print(f"Shape of X: {x_train.shape}")
-print(f"Shape of y: {y_train.shape}")
-
-# Define the neural network architecture
+# Model
 class XORNet(nn.Module):
     def __init__(self):
         super(XORNet, self).__init__()
-        self.sequential = nn.Sequential(nn.Linear(2, 2),
-                      nn.Sigmoid(),
-                      nn.Linear(2, 1),
-                      nn.Sigmoid())
-
+        self.fc1 = nn.Linear(2, 2)
+        self.fc2 = nn.Linear(2, 1)
+        
     def forward(self, x):
-        x = self.sequential(x)
+        x = torch.sigmoid(self.fc1(x))
+        x = self.fc2(x)
         return x
 
-
-
-# Initialize the network, loss function, and optimizer
 model = XORNet().to(device)
-print(model)
-loss_fn = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters())
+criterion = nn.MSELoss()
 
-
-# Training loop
-for epoch in range(10000):
+# Training
+epochs = 10000
+for epoch in range(epochs):
     optimizer.zero_grad()
-    y_pred = model(x_train)
-    loss = loss_fn(y_pred, y_train)
+    outputs = model(x_train)
+    loss = criterion(outputs, y_train)
     loss.backward()
     optimizer.step()
 
-    if epoch % 1000 == 0:
-        print(f"Epoch {epoch}, Loss: {loss.item()}")
-
-# Visualize the model
-model_graph = draw_graph(XORNet(), x_train)
-dot = model_graph.visual_graph
-dot.format = "svg"
-dot.render("pytorch_xor_model", cleanup=True)
-
-
-# Testing the model
+# Print predictions
+model.eval()
 with torch.no_grad():
-    test_output = model(x_train)
-    print(test_output)
+    predictions = model(x_train)
+    print("Predictions for XOR:")
+    print(predictions)
 
-# Save the model as ONNX
-torch.onnx.export(model, x_train, "xor_model.onnx", input_names=["input"], output_names=["output"])
+# Visualization
+model.eval()
+x = np.linspace(-0.01, 1.01, 103)
+X1_raster, X2_raster = np.meshgrid(x, x)
+X1_vektor = X1_raster.flatten()
+X2_vektor = X2_raster.flatten()
+
+eingangswerte_grafik = np.vstack((X1_vektor, X2_vektor)).T
+eingangswerte_tensor = torch.from_numpy(eingangswerte_grafik).float().to(device)
+
+with torch.no_grad():
+    ausgangswerte_grafik = model(eingangswerte_tensor).cpu().numpy().reshape(X1_raster.shape)
+
+# Set dummy limits
+ausgangswerte_grafik[0, 0] = 1.25
+ausgangswerte_grafik[102, 102] = 0.0
+
+plt.style.use('dark_background')
+plt.contourf(X1_raster, X2_raster, ausgangswerte_grafik, 100, cmap="jet")
+plt.xlim(0, 1)
+plt.ylim(0, 1)
+plt.xlabel("Eingabewert $x_1$")
+plt.ylabel("Eingabewert $x_2$")
+plt.colorbar()
+plt.tight_layout()
+plt.savefig("predictions_xor_10000.svg")
 
 
